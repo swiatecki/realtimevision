@@ -6,3 +6,5 @@ void writeTest()
 {
     printf("Hello from C");
 }
+
+// Added this commit
