@@ -1,6 +1,12 @@
 #include <errno.h>
 #include <termios.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>  /* UNIX standard function definitions */
+#include <stdio.h>   /* Standard input/output definitions */
+#include <string.h>  /* String function definitions */
+
 
 int
 set_interface_attribs (int fd, int speed, int parity)
@@ -62,9 +68,10 @@ set_blocking (int fd, int should_block)
 }
 
 
-...
-char *portname = "/dev/ttyUSB1"
- ...
+int main(){
+
+char *portname = "/dev/ttyACM0";
+
 int fd = open (portname, O_RDWR | O_NOCTTY | O_SYNC);
 if (fd < 0)
 {
@@ -75,6 +82,30 @@ if (fd < 0)
 set_interface_attribs (fd, B115200, 0);  // set speed to 115,200 bps, 8n1 (no parity)
 set_blocking (fd, 0);                // set no blocking
 
-write (fd, "hello!\n", 7);           // send 7 character greeting
+      
 char buf [100];
 int n = read (fd, buf, sizeof buf);  // read up to 100 characters if ready to read
+
+// send 2 character greeting
+
+//usleep(1000000);
+write (fd, "n", 1);
+printf("First, on \n");
+sleep(1);
+write (fd, "f", 1);
+printf("2nd, off \n");
+sleep(1);
+
+write (fd, "n", 1);
+printf("3rd, on \n");
+sleep(1);
+
+write (fd, "f", 1);
+printf("4th, off \n");
+sleep(1);
+
+
+close(fd);
+
+return 0;
+}
