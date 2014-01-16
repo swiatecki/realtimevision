@@ -41,7 +41,7 @@ int main(int argc, char** argv){
 //for timing
 
 struct timeval t;
-unsigned long t_us_now,t_us_done,t_diff;
+unsigned long t_us_now,t_us_done,t_diff,t2_us_start,t2_us_stop,t2_diff,t2_temp;
 double fps_calc =0;
 double fps_avg =0;
 
@@ -127,7 +127,8 @@ t_us_done = t_us_start;
 
 
 int cnt = -1;
-
+int frameCnt = 0;
+bool countingState=false;
 while(1){
 
  
@@ -137,13 +138,23 @@ cap >> frame;
 gettimeofday(&t, NULL);
 t_us_now = t.tv_sec*(1000000)+t.tv_usec;
 
+if(frameCnt == 120){
+// Lets turn on the LED, set the countingstate, and get start time
+
+countingState =true;
+
+//Lets get time
+gettimeofday(&t, NULL);
+ledON();
+t2_us_start = t.tv_sec*(1000000)+t.tv_usec;
+}
 
 t_diff = t_us_now-t_us_done;
 
 fps_calc = 1.0/((double)(t_diff)/1000000.0); // calc fps
 
 fps_avg = fcount/((double)(t_us_now-t_us_start)/1000000.0); // calc avg fps
-fcount++;;
+fcount++;
 
 gettimeofday(&t, NULL);
 t_us_done = t.tv_sec*(1000000)+t.tv_usec;
@@ -166,10 +177,10 @@ if(!colorFrame.data) break;
 
 
 // For filtered HSV
-cv::imshow("HSV",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
+//cv::imshow("HSV",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 
-cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
+//cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 
 
@@ -178,31 +189,27 @@ cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture
 //std::cout << "Exec time (us): "<< t_diff << " Calc FPS: " << fps_calc << ", FPS(avg): " << fps_avg << std::endl;
 
 
-	/*for(int i=0;i<=400;i++){
-			for(int j=0;j<=600;j++){
-			
-				int tmp[4];
-				tmp[0] = tresholdedFrame.at<cv::Vec3b>(i,j)[0]; 
-				tmp[1] = tresholdedFrame.at<cv::Vec3b>(i,j)[1]; 
-				tmp[2] = tresholdedFrame.at<cv::Vec3b>(i,j)[2]; 
-				tmp[3] = tresholdedFrame.at<cv::Vec3b>(i,j)[3]; 
-				if(tmp[0] != 0 || tmp[1] != 0 || tmp[2] != 0){
-					std::cout << "Stuff(i,j): (" << i << "," << j << ") --" <<   tmp[0] << "," << tmp[1] << "," << tmp[2] << "," << tmp[3]<< std::endl;
-				}
-			
-
-			}
-
-
-	}*/
-
 
 cnt = cv::countNonZero(tresholdedFrame);
-std::cout << "Count: " << cnt << std::endl;
+//std::cout << "Count: " << cnt << std::endl;
+if(cnt >= 130){
+// LED on
+
+gettimeofday(&t, NULL);
+t2_us_stop = t.tv_sec*(1000000)+t.tv_usec;
+
+t2_diff = (t2_us_stop-t2_us_start);
+
+std::cout << "Lys fundet efter: (us) " << t2_diff << std::endl;
+
+ledOFF();
+
+}
 
 
 if(cv::waitKey(1) >= 2){break;} // We wait 1ms - so that the frame can be drawn
 
+frameCnt++; // LED frame count
 
 }
 
