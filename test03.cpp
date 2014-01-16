@@ -6,6 +6,10 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <sys/time.h>
 
+extern "C" {
+  #include "serial_comm.h" //a C header, so lets wrap it in extern "C" 
+}
+
 
 struct hsvRange{
 
@@ -58,7 +62,10 @@ colorRange.vmax = 255;
 //TestClass tc;
 
 //tc.doStuff();
-  
+ 
+initSerial();
+
+ 
 cv::Mat frame; 
 std::cout << "Init test3" << std::endl;
 
@@ -119,7 +126,7 @@ t_us_start = t.tv_sec*(1000000)+t.tv_usec;
 t_us_done = t_us_start;
 
 
-
+int cnt = -1;
 
 while(1){
 
@@ -157,6 +164,7 @@ cv::inRange(hsvFrame,hsvMin,hsvMax,tresholdedFrame);
 
 if(!colorFrame.data) break;
 
+
 // For filtered HSV
 cv::imshow("HSV",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
@@ -165,17 +173,42 @@ cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture
 
 
 
-if(cv::waitKey(1) >= 2){break;} // We wait 1ms - so that the frame can be drawn
 
 
 //std::cout << "Exec time (us): "<< t_diff << " Calc FPS: " << fps_calc << ", FPS(avg): " << fps_avg << std::endl;
+
+
+	/*for(int i=0;i<=400;i++){
+			for(int j=0;j<=600;j++){
+			
+				int tmp[4];
+				tmp[0] = tresholdedFrame.at<cv::Vec3b>(i,j)[0]; 
+				tmp[1] = tresholdedFrame.at<cv::Vec3b>(i,j)[1]; 
+				tmp[2] = tresholdedFrame.at<cv::Vec3b>(i,j)[2]; 
+				tmp[3] = tresholdedFrame.at<cv::Vec3b>(i,j)[3]; 
+				if(tmp[0] != 0 || tmp[1] != 0 || tmp[2] != 0){
+					std::cout << "Stuff(i,j): (" << i << "," << j << ") --" <<   tmp[0] << "," << tmp[1] << "," << tmp[2] << "," << tmp[3]<< std::endl;
+				}
+			
+
+			}
+
+
+	}*/
+
+
+cnt = cv::countNonZero(tresholdedFrame);
+std::cout << "Count: " << cnt << std::endl;
+
+
+if(cv::waitKey(1) >= 2){break;} // We wait 1ms - so that the frame can be drawn
 
 
 }
 
 cv::destroyWindow("Color"); //destroy the window with the name, "MyWindow"
 cv::destroyWindow("HSV"); 
-
+closeSerial();
 
 
 return 0;
