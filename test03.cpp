@@ -134,6 +134,11 @@ while(1){
  
 cap >> frame;
 
+gettimeofday(&t, NULL);
+t2_us_stop = t.tv_sec*(1000000)+t.tv_usec;
+
+
+
 //Lets get time now
 gettimeofday(&t, NULL);
 t_us_now = t.tv_sec*(1000000)+t.tv_usec;
@@ -195,8 +200,6 @@ cnt = cv::countNonZero(tresholdedFrame);
 if(cnt >= 130){
 // LED on
 
-gettimeofday(&t, NULL);
-t2_us_stop = t.tv_sec*(1000000)+t.tv_usec;
 
 t2_diff = (t2_us_stop-t2_us_start);
 
