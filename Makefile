@@ -31,3 +31,6 @@ fps: test_fps.o
 	g++  -c $(CPPFLAGS) $(CXXFLAGS) test_fps.o
 	g++  test_fps.o $(LIBS) -o fps
 
+reaction: serial_comm test_reactionTime.o
+	g++  -c $(CPPFLAGS) $(CXXFLAGS) test_reactionTime.o
+	g++  test_reactionTime.o serial_comm.o $(LIBS) -lcom_err -o reactionTime
