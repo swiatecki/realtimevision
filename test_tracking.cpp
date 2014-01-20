@@ -46,12 +46,12 @@ double fps_calc =0;
 double fps_avg =0;
 
 // HSV range
-colorRange.hmin = 0;
-colorRange.hmax = 5;
-colorRange.smin = 0;
-colorRange.smax = 5;
-colorRange.vmin = 230;
-colorRange.vmax = 255;
+colorRange.hmin = 38;
+colorRange.hmax = 60;
+colorRange.smin = 20;
+colorRange.smax = 50;
+colorRange.vmin = 170;
+colorRange.vmax = 205;
 
 // For color/treshold sliders
 //cv::Scalar g_tres_min(128,128,128);
@@ -73,18 +73,24 @@ cv::namedWindow("Color", CV_WINDOW_AUTOSIZE); //create a window with the name "M
 
 cv::namedWindow("HSV", CV_WINDOW_AUTOSIZE); //create a window with the name "HSV"
 
-//int initShutter = 728;
-int initShutter = 0;
+int initShutter = 797;
+//int initShutter = 0;
 
 int shutterVal = initShutter;
+int cannyMin = 35;
 
 // Shutter slider
 cv::createTrackbar("tbShutter","Color",&shutterVal,4095,shutterCB,NULL);
+
+// Canny treshold
+
+cv::createTrackbar("tbCannyMin","Color",&cannyMin,100,NULL,NULL);
 
 
 cv::Mat colorFrame;
 cv::Mat tresholdedFrame;
 cv::Mat hsvFrame;
+cv::Mat grey,tmp;
 
 // HSV values are H from 0-180 while S and V are from 0-255 
 //cv::createTrackbar("tbH","MyWindow",&colH,180,HCB,&g_tres_min);
@@ -129,20 +135,28 @@ t_us_done = t_us_start;
 int cnt = -1;
 int frameCnt = 0;
 bool countingState=false;
+
+cv::RNG rng(12345);
+
+
 while(1){
 
  
 cap >> frame;
 
-gettimeofday(&t, NULL);
-t2_us_stop = t.tv_sec*(1000000)+t.tv_usec;
 
+std::vector<std::vector<cv::Point> > contours;
+std::vector<cv::Vec4i> hierarchy;
 
 
 //Lets get time now
 gettimeofday(&t, NULL);
 t_us_now = t.tv_sec*(1000000)+t.tv_usec;
 
+/* PART 1 of count
+gettimeofday(&t, NULL);
+t2_us_stop = t.tv_sec*(1000000)+t.tv_usec;
+ 
 if(frameCnt == 120){
 // Lets turn on the LED, set the countingstate, and get start time
 
@@ -152,7 +166,7 @@ countingState =true;
 gettimeofday(&t, NULL);
 ledON();
 t2_us_start = t.tv_sec*(1000000)+t.tv_usec;
-}
+}*/
 
 t_diff = t_us_now-t_us_done;
 
@@ -175,17 +189,63 @@ cv::Scalar hsvMax(colorRange.hmax,colorRange.smax,colorRange.vmax);
 cv::Scalar hsvMin(colorRange.hmin,colorRange.smin,colorRange.vmin);
 
 // Apply treshold (HSV)
-cv::inRange(hsvFrame,hsvMin,hsvMax,tresholdedFrame);
+//cv::inRange(hsvFrame,hsvMin,hsvMax,tresholdedFrame);
 
+cv::cvtColor( colorFrame, grey, CV_BGR2GRAY );
+
+//blur( grey, tmp, cv::Size(5,5) );
+
+cv::Canny( grey, tresholdedFrame, cannyMin, cannyMin*2, 3 );
+
+cv::findContours(tresholdedFrame,contours,hierarchy,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+
+
+int blablalba = 0 ;
+
+ /// Get the moments
+  std::vector<cv::Moments> mu(contours.size() );
+  for( int i = 0; i < contours.size(); i++ )
+     { mu[i] = moments( contours[i], false ); }
+
+  ///  Get the mass centers:
+  std::vector<cv::Point2f> mc( contours.size() );
+  for( int i = 0; i < contours.size(); i++ )
+     { mc[i] = cv::Point2f( mu[i].m10/mu[i].m00 , mu[i].m01/mu[i].m00 ); }
+
+    std::vector<cv::Rect> boundRect( contours.size() );
+    std::vector<std::vector<cv::Point> > contours_poly( contours.size() );
+// Draw some countours, and maybe some bounding box
+cv::Mat drawing = cv::Mat::zeros( tresholdedFrame.size(), CV_8UC3 );
+  for( int i = 0; i< contours.size(); i++ )
+     {
+       cv::approxPolyDP( cv::Mat(contours[i]), contours_poly[i], 3, true );
+       boundRect[i] = cv::boundingRect( cv::Mat(contours_poly[i]) );
+       cv::Scalar color = cv::Scalar( 255,0,0 );
+       cv::drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, cv::Point() );
+        color = cv::Scalar( 0,0,255 );
+       rectangle( drawing, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
+       
+        color = cv::Scalar( 0,255,0 );
+      //cv::circle( drawing, mc[i], 2, color, -1, 8, 0 );
+	
+	
+	cv::Point xx = cv::Point(boundRect[i].tl().x+(boundRect[i].width/2),boundRect[i].tl().y+(boundRect[i].height/2));
+	cv::circle( drawing, xx, 2, color, -1, 8, 0 );
+	
+     }
+
+  /// Show in a window
+  cv::namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
+  cv::imshow( "Contours", drawing );
 
 if(!colorFrame.data) break;
 
 
 // For filtered HSV
-//cv::imshow("HSV",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
+cv::imshow("HSV",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 
-//cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
+cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 
 
@@ -195,8 +255,9 @@ if(!colorFrame.data) break;
 
 
 
+/* part 2 of counting. 
 cnt = cv::countNonZero(tresholdedFrame);
-//std::cout << "Count: " << cnt << std::endl;
+
 if(cnt >= 130){
 // LED on
 
@@ -207,10 +268,10 @@ std::cout << "Lys fundet efter: (us) " << t2_diff << std::endl;
 
 ledOFF();
 
-}
+}*/
 
 
-if(cv::waitKey(1) >= 2){break;} // We wait 1ms - so that the frame can be drawn
+if(cv::waitKey(1) >= 2){ /*break; */} // We wait 1ms - so that the frame can be drawn
 
 frameCnt++; // LED frame count
 
@@ -254,6 +315,9 @@ t_us_start = t.tv_sec*(1000000)+t.tv_usec;
 
 std::cout << "CALLBACK !!!: pos:  " << pos << "Shutter read: " << cap.get(CV_CAP_PROP_EXPOSURE) << std::endl;
 }
+
+
+
 
 
 void onMouse( int event, int x, int y, int, void* userdata ){
