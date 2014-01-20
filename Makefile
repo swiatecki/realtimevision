@@ -24,4 +24,10 @@ clean :
 
 #test01:test01.cpp
 #	g++ -o test01 test01.cpp $(CPPFLAGS) $(CXXFLAGS) $(LIBS)
+
+
 	
+fps: test_fps.o
+	g++  -c $(CPPFLAGS) $(CXXFLAGS) test_fps.o
+	g++  test_fps.o $(LIBS) -o fps
+

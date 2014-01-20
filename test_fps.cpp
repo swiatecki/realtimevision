@@ -5,10 +5,8 @@
 #include <opencv2/video/video.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <sys/time.h>
+#include <fstream>
 
-extern "C" {
-  #include "serial_comm.h" //a C header, so lets wrap it in extern "C" 
-}
 
 
 struct hsvRange{
@@ -17,6 +15,16 @@ int hmax,hmin,smax,smin,vmax,vmin;
 
 } colorRange;
 
+struct fpsData{
+
+int renderTime;
+double fps, fpsAvg;
+
+};
+
+std::vector<fpsData> outData;
+
+typedef std::vector<fpsData>::size_type fps_sz;
 
 
 int fps = 60;
@@ -25,7 +33,7 @@ int fps = 60;
 void readCapParams();
 void shutterCB(int pos, void* param);
 void onMouse( int event, int x, int y, int, void* );
-
+void writeLog();
 ///Globals
 
 cv::VideoCapture cap;  
@@ -63,7 +71,7 @@ colorRange.vmax = 255;
 
 //tc.doStuff();
  
-initSerial();
+
 
  
 cv::Mat frame; 
@@ -73,8 +81,8 @@ cv::namedWindow("Color", CV_WINDOW_AUTOSIZE); //create a window with the name "M
 
 cv::namedWindow("HSV", CV_WINDOW_AUTOSIZE); //create a window with the name "HSV"
 
-//int initShutter = 728;
-int initShutter = 0;
+int initShutter = 728;
+//int initShutter = 0;
 
 int shutterVal = initShutter;
 
@@ -143,16 +151,6 @@ t2_us_stop = t.tv_sec*(1000000)+t.tv_usec;
 gettimeofday(&t, NULL);
 t_us_now = t.tv_sec*(1000000)+t.tv_usec;
 
-if(frameCnt == 120){
-// Lets turn on the LED, set the countingstate, and get start time
-
-countingState =true;
-
-//Lets get time
-gettimeofday(&t, NULL);
-ledON();
-t2_us_start = t.tv_sec*(1000000)+t.tv_usec;
-}
 
 t_diff = t_us_now-t_us_done;
 
@@ -188,26 +186,22 @@ if(!colorFrame.data) break;
 //cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 
+// Copy benchmark data to outData
+
+fpsData tmp;
+
+tmp.renderTime = (unsigned int)t_diff;
+tmp.fps = fps_calc;
+tmp.fpsAvg = fps_avg;
+
+outData.push_back(tmp);
+
+
+std::cout << "Exec time (us): "<< t_diff << " Calc FPS: " << fps_calc << ", FPS(avg): " << fps_avg << std::endl;
 
 
 
-//std::cout << "Exec time (us): "<< t_diff << " Calc FPS: " << fps_calc << ", FPS(avg): " << fps_avg << std::endl;
 
-
-
-cnt = cv::countNonZero(tresholdedFrame);
-//std::cout << "Count: " << cnt << std::endl;
-if(cnt >= 130){
-// LED on
-
-
-t2_diff = (t2_us_stop-t2_us_start);
-
-std::cout << "Lys fundet efter: (us) " << t2_diff << std::endl;
-
-ledOFF();
-
-}
 
 
 if(cv::waitKey(1) >= 2){break;} // We wait 1ms - so that the frame can be drawn
@@ -216,9 +210,13 @@ frameCnt++; // LED frame count
 
 }
 
+
 cv::destroyWindow("Color"); //destroy the window with the name, "MyWindow"
 cv::destroyWindow("HSV"); 
-closeSerial();
+
+// output framerates to file 
+
+writeLog();
 
 
 return 0;
@@ -280,3 +278,24 @@ std::cout << "(x,y):" << x << "," << y << " (R,G,B): " << R << "," << G << "," <
 }
 
 
+void writeLog(){
+
+fps_sz size = outData.size();
+
+std::ofstream a_file ("fpsLog.txt",std::ios::trunc);
+
+
+for(std::vector<fpsData>::size_type i = 0; i != size; ++i){
+
+ 
+  a_file<< outData[i].renderTime << "," << outData[i].fps << "," << outData[i].fpsAvg << std::endl;
+  // Close the file stream explicitly
+
+
+}
+
+  a_file.close();
+
+
+
+}
