@@ -73,7 +73,7 @@ cv::namedWindow("Color", CV_WINDOW_AUTOSIZE); //create a window with the name "M
 
 cv::namedWindow("HSV", CV_WINDOW_AUTOSIZE); //create a window with the name "HSV"
 
-int initShutter = 797;
+int initShutter = 410;
 //int initShutter = 0;
 
 int shutterVal = initShutter;
@@ -197,7 +197,7 @@ cv::cvtColor( colorFrame, grey, CV_BGR2GRAY );
 
 cv::Canny( grey, tresholdedFrame, cannyMin, cannyMin*2, 3 );
 
-cv::findContours(tresholdedFrame,contours,hierarchy,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+cv::findContours(tresholdedFrame,contours,hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
 
 int blablalba = 0 ;
@@ -218,10 +218,15 @@ int blablalba = 0 ;
 cv::Mat drawing = cv::Mat::zeros( tresholdedFrame.size(), CV_8UC3 );
   for( int i = 0; i< contours.size(); i++ )
      {
-       cv::approxPolyDP( cv::Mat(contours[i]), contours_poly[i], 3, true );
+       
+       if(contourArea(contours[i]) < 200 ){
+	 // To small, ignore
+	 
+      }else{
+       cv::approxPolyDP( cv::Mat(contours[i]), contours_poly[i], 1, true );
        boundRect[i] = cv::boundingRect( cv::Mat(contours_poly[i]) );
        cv::Scalar color = cv::Scalar( 255,0,0 );
-       cv::drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, cv::Point() );
+       cv::drawContours( drawing, contours, i, color, -1, 8, hierarchy, 0, cv::Point() );
         color = cv::Scalar( 0,0,255 );
        rectangle( drawing, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
        
@@ -231,7 +236,7 @@ cv::Mat drawing = cv::Mat::zeros( tresholdedFrame.size(), CV_8UC3 );
 	
 	cv::Point xx = cv::Point(boundRect[i].tl().x+(boundRect[i].width/2),boundRect[i].tl().y+(boundRect[i].height/2));
 	cv::circle( drawing, xx, 2, color, -1, 8, 0 );
-	
+      }
      }
 
   /// Show in a window
