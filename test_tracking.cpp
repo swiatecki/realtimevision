@@ -73,11 +73,11 @@ cv::namedWindow("Color", CV_WINDOW_AUTOSIZE); //create a window with the name "M
 
 cv::namedWindow("HSV", CV_WINDOW_AUTOSIZE); //create a window with the name "HSV"
 
-int initShutter = 410;
+int initShutter = 495;
 //int initShutter = 0;
 
 int shutterVal = initShutter;
-int cannyMin = 35;
+int cannyMin = 69;
 
 // Shutter slider
 cv::createTrackbar("tbShutter","Color",&shutterVal,4095,shutterCB,NULL);
@@ -197,7 +197,12 @@ cv::cvtColor( colorFrame, grey, CV_BGR2GRAY );
 
 cv::Canny( grey, tresholdedFrame, cannyMin, cannyMin*2, 3 );
 
-cv::findContours(tresholdedFrame,contours,hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+
+cv::Mat contourOutput = tresholdedFrame.clone();
+blur( contourOutput, tmp, cv::Size(3,3) );
+
+
+cv::findContours(tmp,contours,hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
 
 int blablalba = 0 ;
@@ -219,7 +224,7 @@ cv::Mat drawing = cv::Mat::zeros( tresholdedFrame.size(), CV_8UC3 );
   for( int i = 0; i< contours.size(); i++ )
      {
        
-       if(contourArea(contours[i]) < 200 ){
+       if(cv::contourArea(contours[i]) < 400 ){
 	 // To small, ignore
 	 
       }else{
@@ -228,7 +233,7 @@ cv::Mat drawing = cv::Mat::zeros( tresholdedFrame.size(), CV_8UC3 );
        cv::Scalar color = cv::Scalar( 255,0,0 );
        cv::drawContours( drawing, contours, i, color, -1, 8, hierarchy, 0, cv::Point() );
         color = cv::Scalar( 0,0,255 );
-       rectangle( drawing, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
+       cv::rectangle( drawing, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
        
         color = cv::Scalar( 0,255,0 );
       //cv::circle( drawing, mc[i], 2, color, -1, 8, 0 );
