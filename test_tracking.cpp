@@ -5,6 +5,7 @@
 #include <opencv2/video/video.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <sys/time.h>
+#include <sstream>
 
 extern "C" {
   #include "serial_comm.h" //a C header, so lets wrap it in extern "C" 
@@ -67,7 +68,7 @@ initSerial();
 
  
 cv::Mat frame; 
-std::cout << "Init test3" << std::endl;
+//std::cout << "Init test3" << std::endl;
 
 cv::namedWindow("Color", CV_WINDOW_AUTOSIZE); //create a window with the name "MyWindow"
 
@@ -107,7 +108,7 @@ cap.open(CV_CAP_DC1394); // Open first firewire camera. in 2.3 use CV_CAP, in 2.
 
 
 
-std::cout << "Initial FPS: " << cap.get(CV_CAP_PROP_FPS) << std::endl;
+//std::cout << "Initial FPS: " << cap.get(CV_CAP_PROP_FPS) << std::endl;
 // Try setting one
 
 cap.set(CV_CAP_PROP_WHITE_BALANCE_BLUE_U,794); // 736
@@ -118,7 +119,7 @@ cap.set(CV_CAP_PROP_GAMMA,1);
 cap.set(CV_CAP_PROP_GAIN,30);
 
 // REMMEBER TO ENABLE
- std::cout << "Set FPS: " << cap.get(CV_CAP_PROP_FPS) << "And gamma: " << cap.get(CV_CAP_PROP_GAMMA) << std::endl;
+// std::cout << "Set FPS: " << cap.get(CV_CAP_PROP_FPS) << "And gamma: " << cap.get(CV_CAP_PROP_GAMMA) << std::endl;
 
 
 //readCapParams();
@@ -268,19 +269,19 @@ cv::Point centerOfBlock;
      
    cv::Point centerOfFrame = cv::Point(s.width/2,s.height/2);  
      
-   int distX = centerOfBlock.x-centerOfFrame.x;
-   int distY = centerOfBlock.y-centerOfFrame.y;
+   float distX = centerOfBlock.x-centerOfFrame.x;
+   float distY = centerOfBlock.y-centerOfFrame.y;
    
   // std::cout << "Dist(x,y): " << distX << "," << distY << std::endl;
      
-  /* int mod = flipper%2;
-
-    if(mod){
-      system("echo 'speedl([-0.2, 0, 0, 0, 0, 0],1.2,1)' | ncat 10.59.8.118 31001 --send-only");
-    }else{
-     system("echo 'speedl([0.2, 0, 0, 0, 0, 0],1.2,1)' | ncat 10.59.8.118 31001 --send-only");
-    }
-   */
+   
+std::stringstream ss;
+ss << "speedl(["<< (distX/100)*0.3 << ", 0, 0, 0, 0, 0],0.8,0.3)";
+std::string outss = ss.str();
+   
+std::cout << outss << std::endl;
+    
+   
   
 
    
@@ -321,7 +322,7 @@ ledOFF();
 }*/
 
 
-if(cv::waitKey(100) >= 2){ /*break; */} // We wait 1ms - so that the frame can be drawn
+if(cv::waitKey(1) >= 2){ /*break; */} // We wait 1ms - so that the frame can be drawn
 
 frameCnt++; // LED frame count
 
