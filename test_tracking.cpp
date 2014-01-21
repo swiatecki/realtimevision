@@ -73,7 +73,7 @@ cv::namedWindow("Color", CV_WINDOW_AUTOSIZE); //create a window with the name "M
 
 cv::namedWindow("HSV", CV_WINDOW_AUTOSIZE); //create a window with the name "HSV"
 
-int initShutter = 495;
+int initShutter = 1200;
 //int initShutter = 0;
 
 int shutterVal = initShutter;
@@ -117,8 +117,8 @@ cap.set(CV_CAP_PROP_FPS,fps);
 cap.set(CV_CAP_PROP_GAMMA,1);
 cap.set(CV_CAP_PROP_GAIN,30);
 
-
-std::cout << "Set FPS: " << cap.get(CV_CAP_PROP_FPS) << "And gamma: " << cap.get(CV_CAP_PROP_GAMMA) << std::endl;
+// REMMEBER TO ENABLE
+ std::cout << "Set FPS: " << cap.get(CV_CAP_PROP_FPS) << "And gamma: " << cap.get(CV_CAP_PROP_GAMMA) << std::endl;
 
 
 //readCapParams();
@@ -138,6 +138,7 @@ bool countingState=false;
 
 cv::RNG rng(12345);
 
+int flipper = 0;
 
 while(1){
 
@@ -221,10 +222,16 @@ int blablalba = 0 ;
     std::vector<std::vector<cv::Point> > contours_poly( contours.size() );
 // Draw some countours, and maybe some bounding box
 cv::Mat drawing = cv::Mat::zeros( tresholdedFrame.size(), CV_8UC3 );
+
+
+cv::Point centerOfBlock;
+
   for( int i = 0; i< contours.size(); i++ )
      {
-       
-       if(cv::contourArea(contours[i]) < 400 ){
+
+	// Filter out small areas, and filter out contours that are holes 
+	// See http://stackoverflow.com/questions/8461612/using-hierarchy-in-findcontours-in-opencv
+       if(cv::contourArea(contours[i]) < 400 || hierarchy[i][3] < 0 ){
 	 // To small, ignore
 	 
       }else{
@@ -241,22 +248,55 @@ cv::Mat drawing = cv::Mat::zeros( tresholdedFrame.size(), CV_8UC3 );
 	
 	cv::Point xx = cv::Point(boundRect[i].tl().x+(boundRect[i].width/2),boundRect[i].tl().y+(boundRect[i].height/2));
 	cv::circle( drawing, xx, 2, color, -1, 8, 0 );
+	 
+	centerOfBlock = xx;
+	
+	/*std::cout << "Nu er det contour nr: " << i << ". Hir(0,1,2,3): " << hierarchy[i][0] << "," 
+	<< hierarchy[i][1] << "," << hierarchy[i][2] << "," << hierarchy[i][3] << std::endl;*/
+	
+	
+	
       }
      }
 
+  /*
+   *CALCULATE ERROR
+   
+   */
+     
+   cv::Size s = tresholdedFrame.size(); 
+     
+   cv::Point centerOfFrame = cv::Point(s.width/2,s.height/2);  
+     
+   int distX = centerOfBlock.x-centerOfFrame.x;
+   int distY = centerOfBlock.y-centerOfFrame.y;
+   
+  // std::cout << "Dist(x,y): " << distX << "," << distY << std::endl;
+     
+  /* int mod = flipper%2;
+
+    if(mod){
+      system("echo 'speedl([-0.2, 0, 0, 0, 0, 0],1.2,1)' | ncat 10.59.8.118 31001 --send-only");
+    }else{
+     system("echo 'speedl([0.2, 0, 0, 0, 0, 0],1.2,1)' | ncat 10.59.8.118 31001 --send-only");
+    }
+   */
+  
+
+   
+     
   /// Show in a window
-  cv::namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
-  cv::imshow( "Contours", drawing );
+ // cv::namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
+ // cv::imshow( "Contours", drawing );
 
 if(!colorFrame.data) break;
 
 
 // For filtered HSV
-cv::imshow("HSV",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
+//cv::imshow("HSV",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 
-cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
-
+//cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 
 
@@ -281,7 +321,7 @@ ledOFF();
 }*/
 
 
-if(cv::waitKey(1) >= 2){ /*break; */} // We wait 1ms - so that the frame can be drawn
+if(cv::waitKey(100) >= 2){ /*break; */} // We wait 1ms - so that the frame can be drawn
 
 frameCnt++; // LED frame count
 
