@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string>
 #include <math.h>
+#include <fstream>
 
 using namespace std;
 
@@ -29,7 +30,15 @@ int hmax,hmin,smax,smin,vmax,vmin;
 } colorRange;
 
 
+struct cmdData{
 
+double x,y,z,r,p,ya,a,t_min,distX,distY;
+
+};
+
+std::vector<cmdData> cmd;
+
+typedef std::vector<cmdData>::size_type cmd_sz;
 
 
 int fps = 60;
@@ -38,6 +47,7 @@ int fps = 60;
 void readCapParams();
 void shutterCB(int pos, void* param);
 void onMouse( int event, int x, int y, int, void* );
+void writeLog();
 
 
 ///Globals
@@ -86,11 +96,11 @@ cv::namedWindow("Color", CV_WINDOW_AUTOSIZE); //create a window with the name "M
 
 cv::namedWindow("HSV", CV_WINDOW_AUTOSIZE); //create a window with the name "HSV"
 cv::namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
-int initShutter = 503;
+int initShutter = 1115;
 //int initShutter = 0;
 
 int shutterVal = initShutter;
-int cannyMin = 60;
+int cannyMin = 112;
 
 // Shutter slider
 cv::createTrackbar("tbShutter","Color",&shutterVal,4095,shutterCB,NULL);
@@ -130,14 +140,7 @@ cap.set(CV_CAP_PROP_EXPOSURE,initShutter); // "Shutter" in coriander
 cap.set(CV_CAP_PROP_FPS,fps);
 cap.set(CV_CAP_PROP_GAMMA,0);
 cap.set(CV_CAP_PROP_GAIN,30);
-
-// REMMEBER TO ENABLE
-// std::cout << "Set FPS: " << cap.get(CV_CAP_PROP_FPS) << "And gamma: " << cap.get(CV_CAP_PROP_GAMMA) << std::endl;
-
-
-//readCapParams();
-
-//cv::displayStatusBar("MyWindow","Test text ..",0); //IAU's openCV is not compiled with extended qt/GUI support. 
+ 
 
 //initial time
 gettimeofday(&t, NULL);
@@ -310,15 +313,33 @@ cv::Point centerOfBlock;
   }else{
     
         // std::cout << "Dist(x,y): " << distX << "," << distY << std::endl;
-	
+	  double x_out = distX*0.0010;
+	  double y_out = distY*-0.0010;
+	  double a_out = 1.0;
+	  double t_min_out = 0.2;
       
     std::stringstream ss;
-    ss << "speedl(["<< distX*0.0013 << "," << distY*-0.0013 << ", 0, 0, 0, 0],1,0.05)";
+    ss << "speedl(["<< x_out << "," << y_out << ", 0, 0, 0, 0],"<< a_out << "," << t_min_out <<")";
     std::string outss = ss.str();
       
   //  std::cout << distX << ","<< distY << std::endl;
-	
+cmdData tmp;
 
+tmp.x = x_out;
+tmp.y = y_out;
+tmp.z = 0;
+tmp.r = 0;
+tmp.p =0;
+tmp.ya =0;
+tmp.a = a_out;
+tmp.t_min = t_min_out;
+tmp.distX = distX;
+tmp.distY = distY;
+
+cmd.push_back(tmp);
+
+    
+    
     n.testInterface(outss);
   }
 
@@ -338,41 +359,22 @@ if(!frame .data) break;
 //cv::imshow("HSV",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 
-//cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
+cv::imshow("Color",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 cv::imshow( "Contours", drawing );
 
 
 
-//std::cout << "Exec time (us): "<< t_diff << " Calc FPS: " << fps_calc << ", FPS(avg): " << fps_avg << std::endl;
+if(cv::waitKey(1) >= 27){ break; } // We wait 1ms - so that the frame can be drawn. break on ESC
 
 
-
-/* part 2 of counting. 
-cnt = cv::countNonZero(tresholdedFrame);
-
-if(cnt >= 130){
-// LED on
-
-
-t2_diff = (t2_us_stop-t2_us_start);
-
-std::cout << "Lys fundet efter: (us) " << t2_diff << std::endl;
-
-ledOFF();
-
-}*/
-
-
-if(cv::waitKey(1) == 27){ break; } // We wait 1ms - so that the frame can be drawn. break on ESC
-
-frameCnt++; // LED frame count
 
 }
 
 cv::destroyWindow("Color"); //destroy the window with the name, "MyWindow"
 cv::destroyWindow("HSV"); 
 closeSerial();
+writeLog();
 
 
 n.stopInterface();
@@ -441,3 +443,26 @@ std::cout << "(x,y):" << x << "," << y << " (R,G,B): " << R << "," << G << "," <
 
 
 
+void writeLog(){
+
+cmd_sz size = cmd.size();
+
+std::ofstream a_file ("cmdLog.txt",std::ios::trunc);
+
+
+for(std::vector<cmdData>::size_type i = 0; i != size; ++i){
+
+ 
+  a_file<<  cmd[i].distX << "," << cmd[i].distY << "," << cmd[i].x << "," << cmd[i].y << "," << cmd[i].z << "," 
+  << cmd[i].r << "," << cmd[i].p << "," <<cmd[i].ya << ","
+  <<cmd[i].a << "," << cmd[i].t_min  << endl;
+  // Close the file stream explicitly
+
+
+}
+
+  a_file.close();
+
+
+
+}
