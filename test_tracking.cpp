@@ -86,24 +86,25 @@ cv::namedWindow("Color", CV_WINDOW_AUTOSIZE); //create a window with the name "M
 
 cv::namedWindow("HSV", CV_WINDOW_AUTOSIZE); //create a window with the name "HSV"
 cv::namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
-int initShutter = 735;
+int initShutter = 503;
 //int initShutter = 0;
 
 int shutterVal = initShutter;
-int cannyMin = 71;
+int cannyMin = 60;
 
 // Shutter slider
 cv::createTrackbar("tbShutter","Color",&shutterVal,4095,shutterCB,NULL);
 
 // Canny treshold
 
-cv::createTrackbar("tbCannyMin","Color",&cannyMin,100,NULL,NULL);
+cv::createTrackbar("tbCannyMin","Color",&cannyMin,255,NULL,NULL);
 
 
 cv::Mat colorFrame;
 cv::Mat tresholdedFrame;
 cv::Mat hsvFrame;
 cv::Mat grey,tmp;
+cv::Mat contourOutput;
 
 // HSV values are H from 0-180 while S and V are from 0-255 
 //cv::createTrackbar("tbH","MyWindow",&colH,180,HCB,&g_tres_min);
@@ -177,20 +178,6 @@ std::vector<cv::Vec4i> hierarchy;
 gettimeofday(&t, NULL);
 t_us_now = t.tv_sec*(1000000)+t.tv_usec;
 
-/* PART 1 of count
-gettimeofday(&t, NULL);
-t2_us_stop = t.tv_sec*(1000000)+t.tv_usec;
- 
-if(frameCnt == 120){
-// Lets turn on the LED, set the countingstate, and get start time
-
-countingState =true;
-
-//Lets get time
-gettimeofday(&t, NULL);
-ledON();
-t2_us_start = t.tv_sec*(1000000)+t.tv_usec;
-}*/
 
 t_diff = t_us_now-t_us_done;
 
@@ -203,31 +190,41 @@ gettimeofday(&t, NULL);
 t_us_done = t.tv_sec*(1000000)+t.tv_usec;
 
 // Get color image, decode bayer BGGR.  
-
 cv::cvtColor(frame,colorFrame,CV_BayerBG2RGB,0);
-cv::cvtColor(colorFrame,hsvFrame,CV_RGB2HSV,0);
+cv::cvtColor(colorFrame, grey, CV_RGB2GRAY );
+
+
+// Remove gripper from img
+cv::Rect roi = cv::Rect(475,405,165,75);
+cv::Mat submatrix = cv::Mat(grey,roi);
+submatrix.setTo(cv::Scalar(255));
+
+cv::threshold(grey,tresholdedFrame,cannyMin,255,cv::THRESH_BINARY_INV);
+
+
+
+//cv::cvtColor(colorFrame,hsvFrame,CV_RGB2HSV,0);
 
 /* -------- TRESHOLDING ----------- */
 
-cv::Scalar hsvMax(colorRange.hmax,colorRange.smax,colorRange.vmax);
-cv::Scalar hsvMin(colorRange.hmin,colorRange.smin,colorRange.vmin);
+//cv::Scalar hsvMax(colorRange.hmax,colorRange.smax,colorRange.vmax);
+//cv::Scalar hsvMin(colorRange.hmin,colorRange.smin,colorRange.vmin);
 
 // Apply treshold (HSV)
 //cv::inRange(hsvFrame,hsvMin,hsvMax,tresholdedFrame);
 
-cv::cvtColor( colorFrame, grey, CV_BGR2GRAY );
+//cv::cvtColor( colorFrame, grey, CV_BGR2GRAY );
 
 //blur( grey, tmp, cv::Size(5,5) );
 
-cv::Canny( grey, tresholdedFrame, cannyMin, cannyMin*2, 3 );
+cv::Canny( tresholdedFrame, tmp, cannyMin, cannyMin*2, 3 );
 
 
-cv::Mat contourOutput = tresholdedFrame.clone();
+//contourOutput = tresholdedFrame.clone();
 //blur( contourOutput, tmp, cv::Size(3,3) );
 
 
-cv::findContours(contourOutput,contours,hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-
+cv::findContours(tmp,contours,hierarchy,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
 int blablalba = 0 ;
 
@@ -236,11 +233,12 @@ int blablalba = 0 ;
   for( int i = 0; i < contours.size(); i++ )
      { mu[i] = moments( contours[i], false ); }
 
- /* ///  Get the mass centers:
+  ///  Get the mass centers:
   std::vector<cv::Point2f> mc( contours.size() );
   for( int i = 0; i < contours.size(); i++ )
      { mc[i] = cv::Point2f( mu[i].m10/mu[i].m00 , mu[i].m01/mu[i].m00 ); }
-*/
+
+ 
     std::vector<cv::Rect> boundRect( contours.size() );
     std::vector<std::vector<cv::Point> > contours_poly( contours.size() );
 // Draw some countours, and maybe some bounding box
@@ -256,41 +254,45 @@ cv::Point centerOfBlock;
 
 	// Filter out small areas, and filter out contours that are holes 
 	// See http://stackoverflow.com/questions/8461612/using-hierarchy-in-findcontours-in-opencv
-       if(cv::contourArea(contours[i]) < 400 || hierarchy[i][3] < 0 ){
-	//if(1==2){ // To small, ignore
+       if(cv::contourArea(contours[i]) < 200  ){
+	//if(1==2){ // To small, ignore || hierarchy[i][3] < 0
 	 
-	 std::cout << "LORT" << endl;
+	// std::cout << contours.size() << endl;
 	 
       }else{
-       cv::approxPolyDP( cv::Mat(contours[i]), contours_poly[i], 4, true );
-       boundRect[i] = cv::boundingRect( cv::Mat(contours_poly[i]) );
-       cv::Scalar color = cv::Scalar( 255,0,0 );
-       cv::drawContours( drawing, contours, i, color, -1, 8, hierarchy, 0, cv::Point() );
-        color = cv::Scalar( 0,0,255 );
-       cv::rectangle( drawing, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
+      // cv::approxPolyDP( cv::Mat(contours[i]), contours_poly[i], 3, true );
+    //   boundRect[i] = cv::boundingRect( cv::Mat(contours_poly[i]) );
+    //   cv::Scalar color = cv::Scalar( 255,0,0 );
+      // cv::drawContours( drawing, contours, i, color, -1, 8, hierarchy, 0, cv::Point() );
+    //    color = cv::Scalar( 0,0,255 );
+      // cv::rectangle( drawing, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
        
-        color = cv::Scalar( 0,255,0 );
+       cv::Scalar color = cv::Scalar( 0,255,0 );
 	//draw center of mass
-      //cv::circle( drawing, mc[i], 2, color, -1, 8, 0 );
+      cv::circle( drawing, mc[i], 5, color, -1, 8, 0 );
 	
 	
 	cv::Point xx = cv::Point(boundRect[i].tl().x+(boundRect[i].width/2),boundRect[i].tl().y+(boundRect[i].height/2));
-	cv::circle( drawing, xx, 2, color, -1, 8, 0 );
+	//cv::circle( drawing, xx, 2, color, -1, 8, 0 );
 	 
-	centerOfBlock = xx;
+	centerOfBlock = mc[i];
 	
 	/*std::cout << "Nu er det contour nr: " << i << ". Hir(0,1,2,3): " << hierarchy[i][0] << "," 
 	<< hierarchy[i][1] << "," << hierarchy[i][2] << "," << hierarchy[i][3] << std::endl;*/
 	
-	
+
 	
       }
      }
+     
+     
 
   /*
    *CALCULATE ERROR
    
    */
+  
+  
      
    cv::Size s = tresholdedFrame.size(); 
      
@@ -311,13 +313,13 @@ cv::Point centerOfBlock;
 	
       
     std::stringstream ss;
-    ss << "speedl(["<< distX*0.0020 << "," << distY*-0.0020 << ", 0, 0, 0, 0],0.6,0.05)";
+    ss << "speedl(["<< distX*0.0013 << "," << distY*-0.0013 << ", 0, 0, 0, 0],1,0.05)";
     std::string outss = ss.str();
       
-    std::cout << distX << ","<< distY << std::endl;
+  //  std::cout << distX << ","<< distY << std::endl;
 	
 
-  //  n.testInterface(outss);
+    n.testInterface(outss);
   }
 
    
@@ -329,14 +331,14 @@ cv::Point centerOfBlock;
  
 
 
-if(!colorFrame.data) break;
+if(!frame .data) break;
 
 
 // For filtered HSV
-cv::imshow("HSV",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
+//cv::imshow("HSV",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 
-cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
+//cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 cv::imshow( "Contours", drawing );
 
