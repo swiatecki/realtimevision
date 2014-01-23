@@ -1,15 +1,25 @@
 #include <iostream>
 #include <opencv2/core/core.hpp>
 #include "opencv2/highgui/highgui.hpp"
-#include "test02.cpp"
+#include "networking.cpp"
 #include <opencv2/video/video.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <sys/time.h>
 #include <sstream>
+#include <stdio.h>
+#include <string>
+#include <math.h>
+
+using namespace std;
 
 extern "C" {
   #include "serial_comm.h" //a C header, so lets wrap it in extern "C" 
 }
+
+
+
+
+
 
 
 struct hsvRange{
@@ -20,12 +30,15 @@ int hmax,hmin,smax,smin,vmax,vmin;
 
 
 
+
+
 int fps = 60;
 //int delay = ((double)(1/(double)(fps)))*1000;
 //Prototypes
 void readCapParams();
 void shutterCB(int pos, void* param);
 void onMouse( int event, int x, int y, int, void* );
+
 
 ///Globals
 
@@ -60,9 +73,8 @@ colorRange.vmax = 205;
 
 //unsigned int colH = 128,colS = 128,colV
  
-//TestClass tc;
+networking n;
 
-//tc.doStuff();
  
 initSerial();
 
@@ -73,12 +85,12 @@ cv::Mat frame;
 cv::namedWindow("Color", CV_WINDOW_AUTOSIZE); //create a window with the name "MyWindow"
 
 cv::namedWindow("HSV", CV_WINDOW_AUTOSIZE); //create a window with the name "HSV"
-
-int initShutter = 1200;
+cv::namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
+int initShutter = 735;
 //int initShutter = 0;
 
 int shutterVal = initShutter;
-int cannyMin = 69;
+int cannyMin = 71;
 
 // Shutter slider
 cv::createTrackbar("tbShutter","Color",&shutterVal,4095,shutterCB,NULL);
@@ -115,7 +127,7 @@ cap.set(CV_CAP_PROP_WHITE_BALANCE_BLUE_U,794); // 736
 cap.set(CV_CAP_PROP_WHITE_BALANCE_RED_V,437);
 cap.set(CV_CAP_PROP_EXPOSURE,initShutter); // "Shutter" in coriander
 cap.set(CV_CAP_PROP_FPS,fps);
-cap.set(CV_CAP_PROP_GAMMA,1);
+cap.set(CV_CAP_PROP_GAMMA,0);
 cap.set(CV_CAP_PROP_GAIN,30);
 
 // REMMEBER TO ENABLE
@@ -139,7 +151,17 @@ bool countingState=false;
 
 cv::RNG rng(12345);
 
-int flipper = 0;
+
+n.startNet();
+n.initRobotServer();
+
+
+n.startInterface();
+//n.testInterface("movel([0.22,-0.33,0.34,0,0,0])");
+
+
+
+
 
 while(1){
 
@@ -201,10 +223,10 @@ cv::Canny( grey, tresholdedFrame, cannyMin, cannyMin*2, 3 );
 
 
 cv::Mat contourOutput = tresholdedFrame.clone();
-blur( contourOutput, tmp, cv::Size(3,3) );
+//blur( contourOutput, tmp, cv::Size(3,3) );
 
 
-cv::findContours(tmp,contours,hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+cv::findContours(contourOutput,contours,hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
 
 int blablalba = 0 ;
@@ -214,14 +236,16 @@ int blablalba = 0 ;
   for( int i = 0; i < contours.size(); i++ )
      { mu[i] = moments( contours[i], false ); }
 
-  ///  Get the mass centers:
+ /* ///  Get the mass centers:
   std::vector<cv::Point2f> mc( contours.size() );
   for( int i = 0; i < contours.size(); i++ )
      { mc[i] = cv::Point2f( mu[i].m10/mu[i].m00 , mu[i].m01/mu[i].m00 ); }
-
+*/
     std::vector<cv::Rect> boundRect( contours.size() );
     std::vector<std::vector<cv::Point> > contours_poly( contours.size() );
 // Draw some countours, and maybe some bounding box
+ 
+ 
 cv::Mat drawing = cv::Mat::zeros( tresholdedFrame.size(), CV_8UC3 );
 
 
@@ -233,10 +257,12 @@ cv::Point centerOfBlock;
 	// Filter out small areas, and filter out contours that are holes 
 	// See http://stackoverflow.com/questions/8461612/using-hierarchy-in-findcontours-in-opencv
        if(cv::contourArea(contours[i]) < 400 || hierarchy[i][3] < 0 ){
-	 // To small, ignore
+	//if(1==2){ // To small, ignore
+	 
+	 std::cout << "LORT" << endl;
 	 
       }else{
-       cv::approxPolyDP( cv::Mat(contours[i]), contours_poly[i], 1, true );
+       cv::approxPolyDP( cv::Mat(contours[i]), contours_poly[i], 4, true );
        boundRect[i] = cv::boundingRect( cv::Mat(contours_poly[i]) );
        cv::Scalar color = cv::Scalar( 255,0,0 );
        cv::drawContours( drawing, contours, i, color, -1, 8, hierarchy, 0, cv::Point() );
@@ -244,6 +270,7 @@ cv::Point centerOfBlock;
        cv::rectangle( drawing, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
        
         color = cv::Scalar( 0,255,0 );
+	//draw center of mass
       //cv::circle( drawing, mc[i], 2, color, -1, 8, 0 );
 	
 	
@@ -269,36 +296,49 @@ cv::Point centerOfBlock;
      
    cv::Point centerOfFrame = cv::Point(s.width/2,s.height/2);  
      
-   float distX = centerOfBlock.x-centerOfFrame.x;
-   float distY = centerOfBlock.y-centerOfFrame.y;
+   float distX = centerOfFrame.x-centerOfBlock.x;
    
-  // std::cout << "Dist(x,y): " << distX << "," << distY << std::endl;
+   float distY = centerOfFrame.y-centerOfBlock.y;
+   
+   if(centerOfBlock.x == 0 || centerOfBlock.y == 0 || (fabs(distX) < 3 && fabs(distY) < 3)){
+	    
+  
+
      
-   
-std::stringstream ss;
-ss << "speedl(["<< (distX/100)*0.3 << ", 0, 0, 0, 0, 0],0.8,0.3)";
-std::string outss = ss.str();
-   
-std::cout << outss << std::endl;
+  }else{
     
+        // std::cout << "Dist(x,y): " << distX << "," << distY << std::endl;
+	
+      
+    std::stringstream ss;
+    ss << "speedl(["<< distX*0.0020 << "," << distY*-0.0020 << ", 0, 0, 0, 0],0.6,0.05)";
+    std::string outss = ss.str();
+      
+    std::cout << distX << ","<< distY << std::endl;
+	
+
+  //  n.testInterface(outss);
+  }
+
    
   
 
    
      
-  /// Show in a window
- // cv::namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
- // cv::imshow( "Contours", drawing );
+
+ 
+
 
 if(!colorFrame.data) break;
 
 
 // For filtered HSV
-//cv::imshow("HSV",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
+cv::imshow("HSV",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 
-//cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
+cv::imshow("Color",colorFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
+cv::imshow( "Contours", drawing );
 
 
 
@@ -322,7 +362,7 @@ ledOFF();
 }*/
 
 
-if(cv::waitKey(1) >= 2){ /*break; */} // We wait 1ms - so that the frame can be drawn
+if(cv::waitKey(1) == 27){ break; } // We wait 1ms - so that the frame can be drawn. break on ESC
 
 frameCnt++; // LED frame count
 
@@ -332,6 +372,9 @@ cv::destroyWindow("Color"); //destroy the window with the name, "MyWindow"
 cv::destroyWindow("HSV"); 
 closeSerial();
 
+
+n.stopInterface();
+n.stopNet();
 
 return 0;
 }
@@ -393,5 +436,6 @@ V = hsvMat.at<cv::Vec3b>(y,x)[2];
 std::cout << "(x,y):" << x << "," << y << " (R,G,B): " << R << "," << G << "," << B << " - (H,S,V) " << H << "," << S << "," << V << std::endl;
 
 }
+
 
 

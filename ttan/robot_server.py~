@@ -644,7 +644,7 @@ class InterfaceTCPHandler(SocketServer.BaseRequestHandler):
 								
 				
 				else:
-					#self.request.send("Unknown command: " + buf + "\n")
+					pass #self.request.send("Unknown command: " + buf + "\n")
 			if command == "q":
 				break
 

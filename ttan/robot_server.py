@@ -849,7 +849,7 @@ def setup_server():
 	return s
 
 if __name__ == "__main__":
-	URScript_server = setup_server()
+	#URScript_server = setup_server()
 	UR5server = ThreadedTCPServer((str(IP_addr), PORTret), UR5TCPHandler)
 	UR5server_thread = threading.Thread(target=UR5server.serve_forever)
 	UR5server_thread.daemon = True
@@ -868,8 +868,8 @@ if __name__ == "__main__":
 			else:
 				while True:
 					print "Robot not connected"
-					URScript_server.close()
-					URScript_server = setup_server()
+					#URScript_server.close()
+					#URScript_server = setup_server()
 					r = getConnectedRobot(wait=True, timeout=3.0)
 					if r:
 						break
@@ -878,6 +878,6 @@ if __name__ == "__main__":
 	except KeyboardInterrupt:
 		print "now quitting"
 		Interfaceserver.shutdown()
-		URScript_server.close()
+		#URScript_server.close()
 		UR5server.shutdown()
 

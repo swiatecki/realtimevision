@@ -5,14 +5,14 @@ CXXFLAGS += $(shell pkg-config opencv --cflags)
 CPPFLAGS =  -Wall -I/usr/include/opencv2
 
 # Add code to to compiled here. eg test.cpp => test.o 
-PROGS = test_tracking.o
+PROGS = networking.o test_tracking.o 
 
 # The Executable that will be made
-OUT = tracking
+OUT = tracking 
 
 all: serial_comm $(PROGS) 
 	g++ -c -g $(CPPFLAGS) $(CXXFLAGS) $(PROGS) -O0
-	g++  serial_comm.o -g $(PROGS) $(LIBS) -lcom_err -O0 -o $(OUT)
+	g++  serial_comm.o $(PROGS) $(LIBS) -lcom_err -O0 -o $(OUT)
 #	g++  -o $(CPPFLAGS) $(CXXFLAGS) $(LIBS) $(PROGS) -o test01
 
 
