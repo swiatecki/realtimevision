@@ -13,7 +13,7 @@ def driverProg():
 		socket_send_string(msg)
 		socket_send_string("~")
 		exit_critical
-		end
+	end
 	def send_waypoint_finished(waypoint_id):
 		enter_critical
 		socket_send_int(MSG_WAYPOINT_FINISHED)

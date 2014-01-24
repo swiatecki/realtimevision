@@ -13,6 +13,7 @@ MSG_WAYPOINT_FINISHED = 4
 MSG_SPEEDL = 7
 MSG_MOVEL = 8
 MSG_STOPL = 9
+MSG_SPEEDJ = 10
 
 HOST1 = '192.38.66.249'    # UR5
 PORT1 = 30002 # The same port as used by the server
@@ -485,7 +486,7 @@ class InterfaceTCPHandler(SocketServer.BaseRequestHandler):
 					break
 				robot = getConnectedRobot(wait=False)
 				command = buf.split('(')[0]
-
+				#print command
 				if buf == str(MSG_JOINT_STATES) or buf == "status":
 					self.request.send("Time (ns)  : " + str(robot.time))
 					self.request.send("\nPosition   : " + str(robot.position))
@@ -636,6 +637,37 @@ class InterfaceTCPHandler(SocketServer.BaseRequestHandler):
 						robot.send_msg(buf)
 					except:
 						self.request.send("Poorly formatted SPEEDL command (Unknown error)\n")		
+						continue
+					      
+				elif command == "speedj": #IMPLEMENTED by NS
+					pose = list()
+					a = 1.2
+					t_min = 0.3
+					wp = 999
+					try:
+						if buf.find('(') == -1 or buf.find(']') == -1 or buf.find(']') == -1 or buf.find(')') == -1:
+							self.request.send("Poorly formatted SPEEDJ command (Could not find expected parenthesis or brackets)\n")
+							continue
+						for ch in buf.split('[')[1].split(']')[0].split(','):
+							pose.append(float(ch))
+						if len(pose) != 6:
+							self.request.send("Poorly formatted SPEEDJ command (Supply 6 values for the pose speed)\n")		
+							continue			
+						params = buf.split(']')[1][:-1].split(',')
+						if len(params) >= 2: #first is the (empty) string between ] and ,
+							a = float(params[1])
+						if len(params) >= 3:
+							t_min = float(params[2])
+						if len(params) >= 4:
+							wp = float(params[3])
+						print "got a SPEEDJ command to waypoint " +str(wp)+ " at pose " + str(pose) + " with params: " + str(a) + ', ' + str(t_min)
+						params = [MSG_SPEEDJ, wp] + \
+								[MULT_jointstate * q for q in pose] + \
+								[MULT_jointstate * a, MULT_jointstate * t_min]
+						buf = struct.pack("!%ii" % len(params), *params)
+						robot.send_msg(buf)
+					except:
+						self.request.send("Poorly formatted SPEEDJ command (Unknown error)\n")		
 						continue
 					
 				elif command == "stopl":
@@ -849,7 +881,7 @@ def setup_server():
 	return s
 
 if __name__ == "__main__":
-	URScript_server = setup_server()
+	#URScript_server = setup_server()
 	UR5server = ThreadedTCPServer((str(IP_addr), PORTret), UR5TCPHandler)
 	UR5server_thread = threading.Thread(target=UR5server.serve_forever)
 	UR5server_thread.daemon = True
@@ -868,8 +900,8 @@ if __name__ == "__main__":
 			else:
 				while True:
 					print "Robot not connected"
-					URScript_server.close()
-					URScript_server = setup_server()
+					#URScript_server.close()
+					#URScript_server = setup_server()
 					r = getConnectedRobot(wait=True, timeout=3.0)
 					if r:
 						break
@@ -878,6 +910,6 @@ if __name__ == "__main__":
 	except KeyboardInterrupt:
 		print "now quitting"
 		Interfaceserver.shutdown()
-		URScript_server.close()
+		#URScript_server.close()
 		UR5server.shutdown()
 

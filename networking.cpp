@@ -84,6 +84,7 @@ const int MSG_WAYPOINT_FINISHED = 4;
 const int MSG_SPEEDL = 7;
 const int MSG_MOVEL = 8;
 const int MSG_STOPL = 9;
+const int MSG_SPEEDJ = 5;
 
     std::stringstream ipss,cmdss;
     ipss << "\tsocket_open(\"" << CALLBACKHOST << "\"," << CALLBACKPORT << ")";
@@ -115,6 +116,9 @@ const int MSG_STOPL = 9;
     messageSend(cmd);
  
    cmdss.str(""); cmdss << "\tMSG_MOVEL = " << MSG_MOVEL << "\n"; cmd = cmdss.str();
+    messageSend(cmd);  
+    
+     cmdss.str(""); cmdss << "\tMSG_SPEEDJ = " << MSG_SPEEDJ << "\n"; cmd = cmdss.str();
     messageSend(cmd);  
 
 	messageSend("\tdef send_out(msg):\n");
@@ -210,6 +214,12 @@ const int MSG_STOPL = 9;
 	messageSend("\t\t\t\t\tspeedl(q, params[0], params[1])\n");
 	messageSend("\t\t\t\t\tsend_waypoint_finished(waypoint_id)\n");
 	messageSend("\t\t\t\t\tsend_out(\"speedl finished\")\n");
+	//messageSend("\t\t\t\tend\n");
+	messageSend("\t\t\t\telif id == MSG_SPEEDJ:\n"); // IMPLEMENTED by NS
+	messageSend("\t\t\t\t\tsend_out(\"speedj started\")\n");//# Sends the command
+	messageSend("\t\t\t\t\tspeedj(q, params[0], params[1])\n");
+	messageSend("\t\t\t\t\tsend_waypoint_finished(waypoint_id)\n");
+	messageSend("\t\t\t\t\tsend_out(\"speedj finished\")\n");
 	messageSend("\t\t\t\tend\n");
 	messageSend("\t\t\telse:\n");
 	messageSend("\t\t\t\t#send_out(\"Idle\")\n");
@@ -276,6 +286,25 @@ const int MSG_STOPL = 9;
 	messageSend("\t\t\t\ta = params_mult[8] / MULT_jointstate\n");
 	messageSend("\t\t\t\tt_min = params_mult[9] / MULT_jointstate\n");
 	messageSend("\t\t\t\tset_queue(MSG_SPEEDL, q, [a, t_min, 0, 0])\n");
+	
+	messageSend("\t\t\telif mtype == MSG_SPEEDJ:\n"); // got speedj // Implemented by NS/s113024
+	messageSend("\t\t\t\tsend_out(\"Received speedj\")\n");
+	messageSend("\t\t\t\tparams_mult = socket_read_binary_integer(1+6+2)\n");
+	messageSend("\t\t\t\tif params_mult[0] == 0:\n");
+	messageSend("\t\t\t\t\tsend_out(\"Received no parameters for speedj message\")\n");
+	messageSend("\t\t\t\tend\n");
+
+	messageSend("\t\t\t\twaypoint_id = params_mult[1]\n"); // Unpacks the parameters
+	messageSend("\t\t\t\tq = [params_mult[2] / MULT_jointstate,\n");
+	messageSend("\t\t\t\t\tparams_mult[3] / MULT_jointstate,\n");
+	messageSend("\t\t\t\t\tparams_mult[4] / MULT_jointstate,\n");
+	messageSend("\t\t\t\t\tparams_mult[5] / MULT_jointstate,\n");
+	messageSend("\t\t\t\t\tparams_mult[6] / MULT_jointstate,\n");
+	messageSend("\t\t\t\t\tparams_mult[7] / MULT_jointstate]\n");
+	messageSend("\t\t\t\ta = params_mult[8] / MULT_jointstate\n");
+	messageSend("\t\t\t\tt_min = params_mult[9] / MULT_jointstate\n");
+	messageSend("\t\t\t\tset_queue(MSG_SPEEDJ, q, [a, t_min, 0, 0])\n"); // END NS
+	
 
 	messageSend("\t\t\telif mtype == MSG_STOPL:\n"); // got stopl
 	messageSend("\t\t\t\tsend_out(\"Received stopl\")\n");
@@ -289,6 +318,7 @@ const int MSG_STOPL = 9;
 	messageSend("\t\tsync()");
 	messageSend("\tend\n"); 	
 	messageSend("end\n");
+	
     
     
     

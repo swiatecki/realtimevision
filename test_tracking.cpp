@@ -96,11 +96,11 @@ cv::namedWindow("Color", CV_WINDOW_AUTOSIZE); //create a window with the name "M
 
 cv::namedWindow("HSV", CV_WINDOW_AUTOSIZE); //create a window with the name "HSV"
 cv::namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
-int initShutter = 1115;
+int initShutter = 581;
 //int initShutter = 0;
 
 int shutterVal = initShutter;
-int cannyMin = 112;
+int cannyMin = 103;
 
 // Shutter slider
 cv::createTrackbar("tbShutter","Color",&shutterVal,4095,shutterCB,NULL);
@@ -313,16 +313,17 @@ cv::Point centerOfBlock;
   }else{
     
         // std::cout << "Dist(x,y): " << distX << "," << distY << std::endl;
-	  double x_out = distX*0.0010;
+	  double x_out = distX*0.0020;
 	  double y_out = distY*-0.0010;
 	  double a_out = 1.0;
 	  double t_min_out = 0.2;
       
     std::stringstream ss;
-    ss << "speedl(["<< x_out << "," << y_out << ", 0, 0, 0, 0],"<< a_out << "," << t_min_out <<")";
+  //  ss << "speedl(["<< x_out << "," << y_out << ", 0, 0, 0, 0],"<< a_out << "," << t_min_out <<")";
+    ss << "speedj(["<< x_out << ",0, 0, 0, 0, 0],"<< a_out << "," << t_min_out <<")";
     std::string outss = ss.str();
       
-  //  std::cout << distX << ","<< distY << std::endl;
+  //  std::cout << outss << std::endl;
 cmdData tmp;
 
 tmp.x = x_out;
@@ -340,7 +341,7 @@ cmd.push_back(tmp);
 
     
     
-    n.testInterface(outss);
+   n.testInterface(outss);
   }
 
    
