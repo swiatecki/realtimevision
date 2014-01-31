@@ -94,7 +94,7 @@ cv::Mat frame;
 
 cv::namedWindow("Color", CV_WINDOW_AUTOSIZE); //create a window with the name "MyWindow"
 
-cv::namedWindow("HSV", CV_WINDOW_AUTOSIZE); //create a window with the name "HSV"
+cv::namedWindow("Thresholded", CV_WINDOW_AUTOSIZE); //create a window with the name "HSV"
 cv::namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
 int initShutter = 581;
 //int initShutter = 0;
@@ -103,11 +103,11 @@ int shutterVal = initShutter;
 int cannyMin = 103;
 
 // Shutter slider
-cv::createTrackbar("tbShutter","Color",&shutterVal,4095,shutterCB,NULL);
+cv::createTrackbar("Shutter","Color",&shutterVal,4095,shutterCB,NULL);
 
 // Canny treshold
 
-cv::createTrackbar("tbCannyMin","Color",&cannyMin,255,NULL,NULL);
+cv::createTrackbar("Threshold","Color",&cannyMin,255,NULL,NULL);
 
 
 cv::Mat colorFrame;
@@ -313,7 +313,7 @@ cv::Point centerOfBlock;
   }else{
     
         // std::cout << "Dist(x,y): " << distX << "," << distY << std::endl;
-	  double x_out = distX*0.0020;
+	  double x_out = distX*0.0010;
 	  double y_out = distY*-0.0010;
 	  double a_out = 1.0;
 	  double t_min_out = 0.2;
@@ -357,23 +357,23 @@ if(!frame .data) break;
 
 
 // For filtered HSV
-//cv::imshow("HSV",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
+cv::imshow("Thresholded",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 
-cv::imshow("Color",tresholdedFrame); // Uncomment this line to see the actual picture. It will give an unsteady FPS
+cv::imshow("Color",grey); // Uncomment this line to see the actual picture. It will give an unsteady FPS
 
 cv::imshow( "Contours", drawing );
 
 
 
-if(cv::waitKey(1) >= 27){ break; } // We wait 1ms - so that the frame can be drawn. break on ESC
+if(cv::waitKey(1) >= 27){ /*break;*/  } // We wait 1ms - so that the frame can be drawn. break on ESC
 
 
 
 }
 
 cv::destroyWindow("Color"); //destroy the window with the name, "MyWindow"
-cv::destroyWindow("HSV"); 
+cv::destroyWindow("Thresholded"); 
 closeSerial();
 writeLog();
 
