@@ -330,7 +330,7 @@ tmp.x = x_out;
 tmp.y = y_out;
 tmp.z = 0;
 tmp.r = 0;
-tmp.p =0;
+tmp.p =0; 
 tmp.ya =0;
 tmp.a = a_out;
 tmp.t_min = t_min_out;
@@ -366,7 +366,7 @@ cv::imshow( "Contours", drawing );
 
 
 
-if(cv::waitKey(1) >= 27){ /*break;*/  } // We wait 1ms - so that the frame can be drawn. break on ESC
+if(cv::waitKey(1) >= 27){ break;  } // We wait 1ms - so that the frame can be drawn. break on ESC
 
 
 
