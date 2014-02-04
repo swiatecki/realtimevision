@@ -315,7 +315,7 @@ cv::Point centerOfBlock;
         // std::cout << "Dist(x,y): " << distX << "," << distY << std::endl;
 	  double x_out = distX*0.0010;
 	  double y_out = distY*-0.0010;
-	  double a_out = 1.0;
+	  double a_out = 5.0;
 	  double t_min_out = 0.2;
       
     std::stringstream ss;
